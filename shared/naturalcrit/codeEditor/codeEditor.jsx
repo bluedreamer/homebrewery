@@ -34,7 +34,11 @@ const CodeEditor = createClass({
 			mode         : this.props.language,
 			extraKeys    : {
 				'Ctrl-B' : this.makeBold,
-				'Ctrl-I' : this.makeItalic
+				'Cmd-B'  : this.makeBold,
+				'Ctrl-I' : this.makeItalic,
+				'Cmd-I'  : this.makeItalic,
+				'Ctrl-M' : this.makeSpan,
+				'Cmd-M'  : this.makeSpan,
 			}
 		});
 
@@ -44,23 +48,36 @@ const CodeEditor = createClass({
 	},
 
 	makeBold : function() {
-		const selection = this.codeMirror.getSelection();
-		this.codeMirror.replaceSelection(`**${selection}**`, 'around');
-	},
-
-	makeItalic : function() {
-		const selection = this.codeMirror.getSelection();
-		this.codeMirror.replaceSelection(`*${selection}*`, 'around');
-	},
-
-	componentWillReceiveProps : function(nextProps){
-		if(this.codeMirror && nextProps.value !== undefined && this.codeMirror.getValue() != nextProps.value) {
-			this.codeMirror.setValue(nextProps.value);
+		const selection = this.codeMirror.getSelection(), t = selection.slice(0, 2) === '**' && selection.slice(-2) === '**';
+		this.codeMirror.replaceSelection(t ? selection.slice(2, -2) : `**${selection}**`, 'around');
+		if(selection.length === 0){
+			const cursor = this.codeMirror.getCursor();
+			this.codeMirror.setCursor({ line: cursor.line, ch: cursor.ch - 2 });
 		}
 	},
 
-	shouldComponentUpdate : function(nextProps, nextState) {
-		return false;
+	makeItalic : function() {
+		const selection = this.codeMirror.getSelection(), t = selection.slice(0, 1) === '_' && selection.slice(-1) === '_';
+		this.codeMirror.replaceSelection(t ? selection.slice(1, -1) : `_${selection}_`, 'around');
+		if(selection.length === 0){
+			const cursor = this.codeMirror.getCursor();
+			this.codeMirror.setCursor({ line: cursor.line, ch: cursor.ch - 1 });
+		}
+	},
+
+	makeSpan : function() {
+		const selection = this.codeMirror.getSelection(), t = selection.slice(0, 2) === '{{' && selection.slice(-2) === '}}';
+		this.codeMirror.replaceSelection(t ? selection.slice(2, -2) : `{{ ${selection}}}`, 'around');
+		if(selection.length === 0){
+			const cursor = this.codeMirror.getCursor();
+			this.codeMirror.setCursor({ line: cursor.line, ch: cursor.ch - 2 });
+		}
+	},
+
+	componentDidUpdate : function(prevProps) {
+		if(this.codeMirror && this.codeMirror.getValue() != this.props.value) {
+			this.codeMirror.setValue(this.props.value);
+		}
 	},
 
 	setCursorPosition : function(line, char){

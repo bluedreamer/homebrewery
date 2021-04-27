@@ -47,6 +47,12 @@ const spellNames = [
 	'Ultimate Rite of the Confetti Angel',
 	'Ultimate Ritual of Mouthwash',
 ];
+const itemNames = [
+	'Doorknob of Niceness',
+	'Paper Armor of Folding',
+	'Mixtape of Sadness',
+	'Staff of Endless Confetti',
+];
 
 module.exports = {
 
@@ -82,10 +88,22 @@ module.exports = {
 			`- **Components:** ${components}`,
 			`- **Duration:** ${_.sample(['Until dispelled', '1 round', 'Instantaneous', 'Concentration, up to 10 minutes', '1 hour'])}`,
 			'',
-			'A flame, equivalent in brightness to a torch, springs from from an object that you touch. ',
+			'A flame, equivalent in brightness to a torch, springs from an object that you touch. ',
 			'The effect look like a regular flame, but it creates no heat and doesn\'t use oxygen. ',
 			'A *continual flame* can be covered or hidden but not smothered or quenched.',
 			'\n\n\n'
+		].join('\n');
+	},
+
+	item : function() {
+		return [
+		  `#### ${_.sample(itemNames)}`,
+			`*${_.sample(['Wondrous item', 'Armor', 'Weapon'])}, ${_.sample(['Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary', 'Artifact'])} (requires attunement)*`,
+			`:`,
+			`This knob is pretty nice. When attached to a door, it allows a user to`,
+			`open that door with the strength of the nearest animal. For example, if`,
+			`there is a cow nearby, the user will have the "strength of a cow" while`,
+			`opening this door.`
 		].join('\n');
 	}
 };

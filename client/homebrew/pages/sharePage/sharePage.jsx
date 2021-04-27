@@ -1,8 +1,6 @@
 require('./sharePage.less');
 const React = require('react');
 const createClass = require('create-react-class');
-const _ = require('lodash');
-const cx = require('classnames');
 const { Meta } = require('vitreum/headtags');
 
 const Nav = require('naturalcrit/nav/nav.jsx');
@@ -24,7 +22,8 @@ const SharePage = createClass({
 				shareId   : null,
 				createdAt : null,
 				updatedAt : null,
-				views     : 0
+				views     : 0,
+				renderer  : ''
 			}
 		};
 	},
@@ -45,6 +44,12 @@ const SharePage = createClass({
 		}
 	},
 
+	processShareId : function() {
+		return this.props.brew.googleId ?
+					 this.props.brew.googleId + this.props.brew.shareId :
+					 this.props.brew.shareId;
+	},
+
 	render : function(){
 		return <div className='sharePage page'>
 			<Meta name='robots' content='noindex, nofollow' />
@@ -54,9 +59,12 @@ const SharePage = createClass({
 				</Nav.section>
 
 				<Nav.section>
-					<PrintLink shareId={this.props.brew.shareId} />
-					<Nav.item href={`/source/${this.props.brew.shareId}`} color='teal' icon='fa-code'>
+					<PrintLink shareId={this.processShareId()} />
+					<Nav.item href={`/source/${this.processShareId()}`} color='teal' icon='fas fa-code'>
 						source
+					</Nav.item>
+					<Nav.item href={`/download/${this.processShareId()}`} color='red' icon='fas fa-download'>
+						download
 					</Nav.item>
 					<RecentNavItem brew={this.props.brew} storageKey='view' />
 					<Account />
@@ -64,7 +72,7 @@ const SharePage = createClass({
 			</Navbar>
 
 			<div className='content'>
-				<BrewRenderer text={this.props.brew.text} />
+				<BrewRenderer text={this.props.brew.text} renderer={this.props.brew.renderer} />
 			</div>
 		</div>;
 	}

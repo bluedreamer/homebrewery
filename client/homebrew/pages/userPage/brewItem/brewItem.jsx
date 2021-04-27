@@ -6,6 +6,8 @@ const cx    = require('classnames');
 const moment = require('moment');
 const request = require('superagent');
 
+const googleDriveIcon = require('../../../googleDrive.png');
+
 const BrewItem = createClass({
 	getDefaultProps : function() {
 		return {
@@ -27,26 +29,74 @@ const BrewItem = createClass({
 			if(!confirm('Are you REALLY sure? You will lose editor access to this document.')) return;
 		}
 
-		request.delete(`/api/${this.props.brew.editId}`)
-			.send()
-			.end(function(err, res){
-				location.reload();
-			});
+		if(this.props.brew.googleId) {
+			request.get(`/api/removeGoogle/${this.props.brew.googleId}${this.props.brew.editId}`)
+				.send()
+				.end(function(err, res){
+					location.reload();
+				});
+		} else {
+			request.delete(`/api/${this.props.brew.editId}`)
+				.send()
+				.end(function(err, res){
+					location.reload();
+				});
+		}
 	},
 
 	renderDeleteBrewLink : function(){
 		if(!this.props.brew.editId) return;
 
 		return <a onClick={this.deleteBrew}>
-			<i className='fa fa-trash' />
+			<i className='fas fa-trash-alt' />
 		</a>;
 	},
+
 	renderEditLink : function(){
 		if(!this.props.brew.editId) return;
 
-		return <a href={`/edit/${this.props.brew.editId}`} target='_blank' rel='noopener noreferrer'>
-			<i className='fa fa-pencil' />
+		let editLink = this.props.brew.editId;
+		if(this.props.brew.googleId) {
+			editLink = this.props.brew.googleId + editLink;
+		}
+
+		return <a href={`/edit/${editLink}`} target='_blank' rel='noopener noreferrer'>
+			<i className='fas fa-pencil-alt' />
 		</a>;
+	},
+
+	renderShareLink : function(){
+		if(!this.props.brew.shareId) return;
+
+		let shareLink = this.props.brew.shareId;
+		if(this.props.brew.googleId) {
+			shareLink = this.props.brew.googleId + shareLink;
+		}
+
+		return <a href={`/share/${shareLink}`} target='_blank' rel='noopener noreferrer'>
+			<i className='fas fa-share-alt' />
+		</a>;
+	},
+
+	renderDownloadLink : function(){
+		if(!this.props.brew.shareId) return;
+
+		let shareLink = this.props.brew.shareId;
+		if(this.props.brew.googleId) {
+			shareLink = this.props.brew.googleId + shareLink;
+		}
+
+		return <a href={`/download/${shareLink}`}>
+			<i className='fas fa-download' />
+		</a>;
+	},
+
+	renderGoogleDriveIcon : function(){
+		if(!this.props.brew.gDrive) return;
+
+		return <span>
+			<img className='googleDriveIcon' src={googleDriveIcon} alt='googleDriveIcon' />
+		</span>;
 	},
 
 	render : function(){
@@ -58,21 +108,21 @@ const BrewItem = createClass({
 
 			<div className='info'>
 				<span>
-					<i className='fa fa-user' /> {brew.authors.join(', ')}
+					<i className='fas fa-user' /> {brew.authors.join(', ')}
 				</span>
 				<span>
-					<i className='fa fa-eye' /> {brew.views}
+					<i className='fas fa-eye' /> {brew.views}
 				</span>
 				<span>
-					<i className='fa fa-refresh' /> {moment(brew.updatedAt).fromNow()}
+					<i className='fas fa-sync-alt' /> {moment(brew.updatedAt).fromNow()}
 				</span>
+				{this.renderGoogleDriveIcon()}
 			</div>
 
 			<div className='links'>
-				<a href={`/share/${brew.shareId}`} target='_blank' rel='noopener noreferrer'>
-					<i className='fa fa-share-alt' />
-				</a>
+				{this.renderShareLink()}
 				{this.renderEditLink()}
+				{this.renderDownloadLink()}
 				{this.renderDeleteBrewLink()}
 			</div>
 		</div>;

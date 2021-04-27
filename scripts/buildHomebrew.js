@@ -1,7 +1,8 @@
 const fs = require('fs-extra');
+const zlib = require('zlib');
 const Proj = require('./project.json');
 
-const { pack } = require('vitreum');
+const { pack, watchFile, livereload } = require('vitreum');
 const isDev = !!process.argv.find((arg)=>arg=='--dev');
 
 const lessTransform  = require('vitreum/transforms/less.js');
@@ -14,10 +15,22 @@ const transforms = {
 };
 
 const build = async ({ bundle, render, ssr })=>{
-	await fs.outputFile('./build/homebrew/bundle.css', await lessTransform.generate({ paths: './shared' }));
+	const css = await lessTransform.generate({ paths: './shared' });
+	await fs.outputFile('./build/homebrew/bundle.css', css);
 	await fs.outputFile('./build/homebrew/bundle.js', bundle);
 	await fs.outputFile('./build/homebrew/ssr.js', ssr);
-	await fs.outputFile('./build/homebrew/render.js', render);
+	await fs.copy('./client/homebrew/phbStyle/fonts', './build/fonts');
+
+	//compress files in production
+	if(!isDev){
+		await fs.outputFile('./build/homebrew/bundle.css.br', zlib.brotliCompressSync(css));
+		await fs.outputFile('./build/homebrew/bundle.js.br', zlib.brotliCompressSync(bundle));
+		await fs.outputFile('./build/homebrew/ssr.js.br', zlib.brotliCompressSync(ssr));
+	} else {
+		await fs.remove('./build/homebrew/bundle.css.br');
+		await fs.remove('./build/homebrew/bundle.js.br');
+		await fs.remove('./build/homebrew/ssr.js.br');
+	}
 };
 
 fs.emptyDirSync('./build/homebrew');
@@ -29,3 +42,12 @@ pack('./client/homebrew/homebrew.jsx', {
 })
 	.then(build)
 	.catch(console.error);
+
+
+//In development set up a watch server and livereload
+if(isDev){
+	livereload('./build');
+	watchFile('./server.js', {
+		watch : ['./client'] // Watch additional folders if you want
+	});
+}

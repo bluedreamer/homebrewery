@@ -1,4 +1,77 @@
+<style>
+h5 {
+	font-size: .35cm !important;
+}
+</style>
+
 # changelog
+
+### Saturday, 20/3/2021 - v2.11.1
+
+- Warning when opening brew in your Google Drive trash
+
+##### G-Ambatte :
+- Snippet to remove drop caps (fancy first letter after title)
+
+### Saturday, 13/3/2021 - v2.11.0
+
+- Many background things for upcoming v3. Get pumped.
+
+##### G-Ambatte :
+- Fixed new brews failing to save when auto-generated file name is too long.
+- "New" button added to the Nav bar.
+- "Download" button to download your brew as a text file.
+- Reduced download size and improved caching.
+
+##### RKuerten :
+- Bold and Italics hotkeys for Mac users (Cmd+B, Cmd+I)
+
+### Friday, 25/1/2021 - v2.10.7
+- Cover Page snippet now flips left-right page numbering.
+- Added instructions for [installing on a FreeBSD Jail](https://github.com/naturalcrit/homebrewery/blob/master/README.FREEBSD.md).
+- Fix for box-shadows breaking across columns. <br>(Thanks G-Ambatte for all of these!)
+- Small user interface tweaks (Thanks Ericsheid)
+
+### Friday, 02/1/2021 - v2.10.6
+- Fixed punctuation for usernames ending with 's' on the user page. (Thanks AlexeySachkov)
+- Fixed server crashes due to excessive long lines in brews
+- Fixed "automated request" lockouts from Google
+
+### Friday, 18/12/2020 - v2.10.5
+- Brews now immediately save when transferring between Google Drive and Homebrewery storage.
+- Added confirmation popup to clarify the transfer process.
+- Brews transferred or deleted from Google will be found in your Google Drive trash.
+- Dependency updates.
+
+### Wednesday, 25/11/2020 - v2.10.4
+- Fixed Google Drive brews not saving metadata (view count, description, etc.) Note that we are still working on making published Google brews visible to the public when viewing your profile page.
+
+### Thursday, 22/10/2020 - v2.10.3
+- Fixed brews with broken code crashing the edit page when loaded (the "blue screen of death" bug).
+
+### Monday, 19/10/2020 - v2.10.2
+- Fixed issue with "recent" item links not updating when transferring between Google Drive.
+
+
+```
+```
+
+### Monday, 12/10/2020 - v2.10.1
+- Fixed issue with users unable to create new brews
+- Fixing brews being lost when loaded via back button
+
+### Wednesday, 07/10/2020 - v2.10.0
+- Google Drive integration -- Sign in with your Google account to link it with your Homebrewery profile. A new button in the Edit page will let you transfer your file to your personal Google Drive storage, and Google will keep a backup of each version! No more lost work surprises!
+
+### Friday, 28/08/2020 - v2.9.2
+- Many dependency updates
+- Finally fixed this changelog page to not run off the edge :P
+
+### Sunday, 19/07/2020 - v2.9.1
+- Fixed paragraphs appearing blank on new columns
+
+### Wednesday, 20/05/2020 - v2.9.0
+- Major refactoring of site backend to work with updated dependencies for security (should be invisible to users)
 
 ### Wednesday, 11/03/2020 - v2.8.2
 - Fixed delete button removing everyone's copy for brews with multiple authors
@@ -27,26 +100,22 @@
 ### Saturday, 22/04/2017 - v2.7.4
 - Give ability to hide the render warning notification
 
+
+\page
+
 ### Friday, 03/03/2017 - v2.7.3
 - Increasing the range on the Partial Page Rendering for a quick-fix for it getting out of sync on long brews.
 
 ### Saturday, 18/02/2017 - v2.7.2
 - Adding ability to delete a brew from the user page, incase the user creates a brew that makes the edit page unrender-able. (re:309)
 
-## BIG NEWS
-With the next major release of Homebrewery, v3.0.0, this tool *will no longer support raw HTML input for brew code*. Most issues and errors users are having are because of this feature and it's become too taxing to help and fix these issues.
-
-All brews made previous to the release of v3.0.0 will still render normally.
-
-### Thursday, 19/01/2017 - v2.7.0
+### Thursday, 19/01/2017 - v2.7.1
 - Fixed saving multiple authors and multiple systems on brew metadata (thanks u/PalaNolho re:282)
 - Adding in line highlight for new pages
 - Added in a simple brew lookup for admin
 
-
 ### Saturday, 14/01/2017 - v2.7.0
 - Added a new Render Warning overlay. It detects situations where the brew may not be rendering correctly (wrong browser, browser is zoomed in...) and let's the user know
-
 
 ### Sunday, 25/12/2016 - v2.7.0
 - Switching over to using Vitreum v4
@@ -60,8 +129,6 @@ All brews made previous to the release of v3.0.0 will still render normally.
 - Removed a lot of unused files in shared
 - vitreum v4 now lets me use codemirror as a pure node dependacy
 
-
-
 ### Saturday, 03/12/2016 - v2.6.0
 - Added report back to the edit page
 - Changed metaeditor icon
@@ -73,12 +140,12 @@ All brews made previous to the release of v3.0.0 will still render normally.
 - Added a table of contents snippet (thanks u/tullisar)
 - Added a multicolumn snippet
 
-
-
 ### Thursday, 01/12/2016
 - Added in a snippet for a split table
 - Added an account nav item to new page
 
+```
+```
 
 ### Sunday, 27/11/2016 - v2.5.1
 - Fixed the column rendering on the new user page. Really should have tested that better
@@ -94,7 +161,6 @@ All brews made previous to the release of v3.0.0 will still render normally.
 - Editing a brew in anyway while logged in will now add you to the list of authors
 - Added a new user page to see others published brews, as well as all of your own brews.
 - Added a new nav item for accessing your profile and logging in
-
 
 ### Monday, 14/11/2016
 - Updated snippet bar style
@@ -120,6 +186,7 @@ All brews made previous to the release of v3.0.0 will still render normally.
 - Fixed the noteblock overlapping into titles (thanks u/dsompura!)
 - Fixed a bad search route in the admin panel (thanks u/SnappyTom!)
 
+\page
 
 ### Friday, 29/07/2016 - v2.2.7
 - Adding in descriptive note blocks. (Thanks calculuschild!)
@@ -141,11 +208,8 @@ All brews made previous to the release of v3.0.0 will still render normally.
 - Added in a new auto-incremeting page number snippet (thakns u/Ryrok!)
 - Lists in monster stat blocks should be fixed now
 
-
 ### Saturday, 04/06/2016 - v2.2.0
 - MIgrating The Homebrewery over to hombrewery.naturalcrit.com. It know runs on it's own server, with it's own repo separate from the other tools I'm working on. Makes updating and deploying much easier.
-
-\page
 
 ### Sunday, 29/05/2016 - v2.1.0
 - Finally added a syntax for doing spell lists. A bit in-depth about why this took so long. Essentially I'm running out of syntax to use in stardard Markdown. There are too many unique elements in the PHB-style to be mapped. I solved this earlier by stacking certain elements together (eg. an `<hr>` before a `blockquote` turns it into moster state block), but those are getting unweildly. I would like to simply wrap these in `div`s with classes, but unfortunately Markdown stops processing when within HTML blocks. To get around this I wrote my own override to the Markdown parser and lexer to process Markdown within a simple div class wrapper. This should open the door for more unique syntaxes in the future. Big step!
@@ -212,8 +276,6 @@ Massive changelog incoming:
 - Source now opens to it's own route `/source/:sharedId` instead of just a window. Now easier to share, and won't be blocked by some browsers.
 - Print page now auto-opens print dialog. If you want to share your print page link, just remove the `?dialog=true` parameter and it won't open the dialog.
 
-
-
 \page
 
 ### Wednesday, 20/04/2016
@@ -273,7 +335,6 @@ Massive changelog incoming:
 * Increased padding on table cells
 * Raw html now shows in view source
 
-
 ## v1.0.0 - Release
 
 ### Wednesday, 3/01/2016
@@ -281,4 +342,3 @@ Massive changelog incoming:
 * Added `phb.standalone.css` plus a build system for creating it
 * Added page numbers and footer text
 * Page accent now flips each page
-

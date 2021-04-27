@@ -1,14 +1,15 @@
+/* eslint-disable max-lines */
 require('./editPage.less');
 const React = require('react');
 const createClass = require('create-react-class');
 const _ = require('lodash');
-const cx = require('classnames');
 const request = require('superagent');
 const { Meta } = require('vitreum/headtags');
 
 const Nav = require('naturalcrit/nav/nav.jsx');
 const Navbar = require('../../navbar/navbar.jsx');
 
+const NewBrew = require('../../navbar/newbrew.navitem.jsx');
 const ReportIssue = require('../../navbar/issue.navitem.jsx');
 const PrintLink = require('../../navbar/print.navitem.jsx');
 const Account = require('../../navbar/account.navitem.jsx');
@@ -20,8 +21,10 @@ const BrewRenderer = require('../../brewRenderer/brewRenderer.jsx');
 
 const Markdown = require('naturalcrit/markdown.js');
 
-const SAVE_TIMEOUT = 3000;
+const googleDriveActive = require('../../googleDrive.png');
+const googleDriveInactive = require('../../googleDriveMono.png');
 
+const SAVE_TIMEOUT = 3000;
 
 const EditPage = createClass({
 	getDefaultProps : function() {
@@ -32,30 +35,43 @@ const EditPage = createClass({
 				editId    : null,
 				createdAt : null,
 				updatedAt : null,
+				gDrive    : false,
+				trashed   : false,
 
 				title       : '',
 				description : '',
 				tags        : '',
 				published   : false,
 				authors     : [],
-				systems     : []
+				systems     : [],
+				renderer    : 'legacy'
 			}
 		};
 	},
 
 	getInitialState : function() {
 		return {
-			brew : this.props.brew,
-
-			isSaving   : false,
-			isPending  : false,
-			errors     : null,
-			htmlErrors : Markdown.validate(this.props.brew.text),
+			brew                   : this.props.brew,
+			isSaving               : false,
+			isPending              : false,
+			alertTrashedGoogleBrew : this.props.brew.trashed,
+			alertLoginToTransfer   : false,
+			saveGoogle             : this.props.brew.googleId ? true : false,
+			confirmGoogleTransfer  : false,
+			errors                 : null,
+			htmlErrors             : Markdown.validate(this.props.brew.text),
+			url                    : ''
 		};
 	},
 	savedBrew : null,
 
 	componentDidMount : function(){
+		this.setState({
+			url : window.location.href
+		});
+
+		this.savedBrew = JSON.parse(JSON.stringify(this.props.brew)); //Deep copy
+
 		this.trySave();
 		window.onbeforeunload = ()=>{
 			if(this.state.isSaving || this.state.isPending){
@@ -74,13 +90,12 @@ const EditPage = createClass({
 		document.removeEventListener('keydown', this.handleControlKeys);
 	},
 
-
 	handleControlKeys : function(e){
 		if(!(e.ctrlKey || e.metaKey)) return;
 		const S_KEY = 83;
 		const P_KEY = 80;
 		if(e.keyCode == S_KEY) this.save();
-		if(e.keyCode == P_KEY) window.open(`/print/${this.props.brew.shareId}?dialog=true`, '_blank').focus();
+		if(e.keyCode == P_KEY) window.open(`/print/${this.processShareId()}?dialog=true`, '_blank').focus();
 		if(e.keyCode == P_KEY || e.keyCode == S_KEY){
 			e.stopPropagation();
 			e.preventDefault();
@@ -113,8 +128,7 @@ const EditPage = createClass({
 	},
 
 	hasChanges : function(){
-		const savedBrew = this.savedBrew ? this.savedBrew : this.props.brew;
-		return !_.isEqual(this.state.brew, savedBrew);
+		return !_.isEqual(this.state.brew, this.savedBrew);
 	},
 
 	trySave : function(){
@@ -126,7 +140,46 @@ const EditPage = createClass({
 		}
 	},
 
-	save : function(){
+	handleGoogleClick : function(){
+		console.log('handlegoogleclick');
+		if(!global.account?.googleId) {
+			this.setState({
+				alertLoginToTransfer : true
+			});
+			return;
+		}
+		this.setState((prevState)=>({
+			confirmGoogleTransfer : !prevState.confirmGoogleTransfer
+		}));
+		this.clearErrors();
+	},
+
+	closeAlerts : function(event){
+		event.stopPropagation();	//Only handle click once so alert doesn't reopen
+		this.setState({
+			alertTrashedGoogleBrew : false,
+			alertLoginToTransfer   : false,
+			confirmGoogleTransfer  : false
+		});
+	},
+
+	toggleGoogleStorage : function(){
+		this.setState((prevState)=>({
+			saveGoogle : !prevState.saveGoogle,
+			isSaving   : false,
+			errors     : null
+		}), ()=>this.save());
+	},
+
+	clearErrors : function(){
+		this.setState({
+			errors   : null,
+			isSaving : false
+
+		});
+	},
+
+	save : async function(){
 		if(this.debounceSave && this.debounceSave.cancel) this.debounceSave.cancel();
 
 		this.setState((prevState)=>({
@@ -135,22 +188,127 @@ const EditPage = createClass({
 			htmlErrors : Markdown.validate(prevState.brew.text)
 		}));
 
-		request
-			.put(`/api/${this.props.brew.editId}`)
-			.send(this.state.brew)
-			.end((err, res)=>{
-				if(err){
-					this.setState({
-						errors : err,
-					});
-				} else {
-					this.savedBrew = res.body;
-					this.setState({
-						isPending : false,
-						isSaving  : false,
-					});
-				}
-			});
+		const transfer = this.state.saveGoogle == _.isNil(this.state.brew.googleId);
+
+		if(this.state.saveGoogle) {
+			if(transfer) {
+				const res = await request
+				.post('/api/newGoogle/')
+				.send(this.state.brew)
+				.catch((err)=>{
+					console.log(err.status === 401
+						? 'Not signed in!'
+						: 'Error Transferring to Google!');
+					this.setState({ errors: err, saveGoogle: false });
+				});
+
+				if(!res) { return; }
+
+				console.log('Deleting Local Copy');
+				await request.delete(`/api/${this.state.brew.editId}`)
+				.send()
+				.catch((err)=>{
+					console.log('Error deleting Local Copy');
+				});
+
+				this.savedBrew = res.body;
+				history.replaceState(null, null, `/edit/${this.savedBrew.googleId}${this.savedBrew.editId}`); //update URL to match doc ID
+			} else {
+				const res = await request
+				.put(`/api/updateGoogle/${this.state.brew.editId}`)
+				.send(this.state.brew)
+				.catch((err)=>{
+					console.log(err.status === 401
+						? 'Not signed in!'
+						: 'Error Saving to Google!');
+					this.setState({ errors: err });
+					return;
+				});
+
+				this.savedBrew = res.body;
+			}
+		} else {
+			if(transfer) {
+				const res = await request.post('/api')
+				.send(this.state.brew)
+				.catch((err)=>{
+					console.log('Error creating Local Copy');
+					this.setState({ errors: err });
+					return;
+				});
+
+				await request.get(`/api/removeGoogle/${this.state.brew.googleId}${this.state.brew.editId}`)
+				.send()
+				.catch((err)=>{
+					console.log('Error Deleting Google Brew');
+				});
+
+				this.savedBrew = res.body;
+				history.replaceState(null, null, `/edit/${this.savedBrew.editId}`); //update URL to match doc ID
+			} else {
+				const res = await request
+				.put(`/api/update/${this.state.brew.editId}`)
+				.send(this.state.brew)
+				.catch((err)=>{
+					console.log('Error Updating Local Brew');
+					this.setState({ errors: err });
+					return;
+				});
+
+				this.savedBrew = res.body;
+			}
+		}
+
+		this.setState((prevState)=>({
+			brew : _.merge({}, prevState.brew, {
+				googleId : this.savedBrew.googleId ? this.savedBrew.googleId : null,
+				editId 	 : this.savedBrew.editId,
+				shareId  : this.savedBrew.shareId
+			}),
+			isPending : false,
+			isSaving  : false,
+		}));
+	},
+
+	renderGoogleDriveIcon : function(){
+		return <Nav.item className='googleDriveStorage' onClick={this.handleGoogleClick}>
+			{this.state.saveGoogle
+				? <img src={googleDriveActive} alt='googleDriveActive'/>
+				: <img src={googleDriveInactive} alt='googleDriveInactive'/>
+			}
+
+			{this.state.confirmGoogleTransfer &&
+				<div className='errorContainer' onClick={this.closeAlerts}>
+					{ this.state.saveGoogle
+						?	`Would you like to transfer this brew from your Google Drive storage back to the Homebrewery?`
+						: `Would you like to transfer this brew from the Homebrewery to your personal Google Drive storage?`
+					}
+					<br />
+					<div className='confirm' onClick={this.toggleGoogleStorage}>
+						Yes
+					</div>
+					<div className='deny'>
+						No
+					</div>
+				</div>
+			}
+
+			{this.state.alertLoginToTransfer &&
+				<div className='errorContainer' onClick={this.closeAlerts}>
+					You must be signed in to a Google account to transfer
+					between the homebrewery and Google Drive!
+					<a target='_blank' rel='noopener noreferrer'
+						href={`http://naturalcrit.com/login?redirect=${this.state.url}`}>
+						<div className='confirm'>
+							Sign In
+						</div>
+					</a>
+					<div className='deny'>
+						Not Now
+					</div>
+				</div>
+			}
+		</Nav.item>;
 	},
 
 	renderSaveButton : function(){
@@ -161,12 +319,31 @@ const EditPage = createClass({
 				errMsg += `\`\`\`\n${JSON.stringify(this.state.errors.response.error, null, '  ')}\n\`\`\``;
 			} catch (e){}
 
-			return <Nav.item className='save error' icon='fa-warning'>
+			if(this.state.errors.status == '401'){
+				return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
+					Oops!
+					<div className='errorContainer' onClick={this.clearErrors}>
+					You must be signed in to a Google account
+						to save this to<br />Google Drive!<br />
+						<a target='_blank' rel='noopener noreferrer'
+							href={`http://naturalcrit.com/login?redirect=${this.state.url}`}>
+							<div className='confirm'>
+								Sign In
+							</div>
+						</a>
+						<div className='deny'>
+							Not Now
+						</div>
+					</div>
+				</Nav.item>;
+			}
+
+			return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 				Oops!
 				<div className='errorContainer'>
 					Looks like there was a problem saving. <br />
 					Report the issue <a target='_blank' rel='noopener noreferrer'
-						href={`https://github.com/stolksdorf/naturalcrit/issues/new?body=${encodeURIComponent(errMsg)}`}>
+						href={`https://github.com/naturalcrt/naturalcrit/issues/new?body=${encodeURIComponent(errMsg)}`}>
 						here
 					</a>.
 				</div>
@@ -174,31 +351,51 @@ const EditPage = createClass({
 		}
 
 		if(this.state.isSaving){
-			return <Nav.item className='save' icon='fa-spinner fa-spin'>saving...</Nav.item>;
+			return <Nav.item className='save' icon='fas fa-spinner fa-spin'>saving...</Nav.item>;
 		}
 		if(this.state.isPending && this.hasChanges()){
-			return <Nav.item className='save' onClick={this.save} color='blue' icon='fa-save'>Save Now</Nav.item>;
+			return <Nav.item className='save' onClick={this.save} color='blue' icon='fas fa-save'>Save Now</Nav.item>;
 		}
 		if(!this.state.isPending && !this.state.isSaving){
 			return <Nav.item className='save saved'>saved.</Nav.item>;
 		}
 	},
+
+	processShareId : function() {
+		return this.state.brew.googleId ?
+					 this.state.brew.googleId + this.state.brew.shareId :
+					 this.state.brew.shareId;
+	},
+
 	renderNavbar : function(){
 		return <Navbar>
+
+			{this.state.alertTrashedGoogleBrew &&
+				<div className='errorContainer' onClick={this.closeAlerts}>
+				This brew is currently in your Trash folder on Google Drive!<br />If you want to keep it, make sure to move it before it is deleted permanently!<br />
+					<div className='confirm'>
+						OK
+					</div>
+				</div>
+			}
+
 			<Nav.section>
 				<Nav.item className='brewTitle'>{this.state.brew.title}</Nav.item>
 			</Nav.section>
 
 			<Nav.section>
+				{this.renderGoogleDriveIcon()}
 				{this.renderSaveButton()}
+				<NewBrew />
 				<ReportIssue />
-				<Nav.item newTab={true} href={`/share/${this.props.brew.shareId}`} color='teal' icon='fa-share-alt'>
+				<Nav.item newTab={true} href={`/share/${this.processShareId()}`} color='teal' icon='fas fa-share-alt'>
 					Share
 				</Nav.item>
-				<PrintLink shareId={this.props.brew.shareId} />
-				<RecentNavItem brew={this.props.brew} storageKey='edit' />
+				<PrintLink shareId={this.processShareId()} />
+				<RecentNavItem brew={this.state.brew} storageKey='edit' />
 				<Account />
 			</Nav.section>
+
 		</Navbar>;
 	},
 
@@ -211,12 +408,12 @@ const EditPage = createClass({
 				<SplitPane onDragFinish={this.handleSplitMove} ref='pane'>
 					<Editor
 						ref='editor'
-						value={this.state.brew.text}
+						brew={this.state.brew}
 						onChange={this.handleTextChange}
-						metadata={this.state.brew}
 						onMetadataChange={this.handleMetadataChange}
+						renderer={this.state.brew.renderer}
 					/>
-					<BrewRenderer text={this.state.brew.text} errors={this.state.htmlErrors} />
+					<BrewRenderer text={this.state.brew.text} errors={this.state.htmlErrors} renderer={this.state.brew.renderer} />
 				</SplitPane>
 			</div>
 		</div>;
